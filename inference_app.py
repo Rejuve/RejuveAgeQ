@@ -13,7 +13,7 @@ logging.basicConfig(
 
 # --- Load predictor once (at startup) ---
 # Point to your trained predictor directory (where predictor.pkl / models/ live)
-PREDICTOR_PATH = "/home/kolyar/workspace/nhanes_clock/AutogluonModels/ag-20250810_222628"  
+PREDICTOR_PATH = "checkpoint/survey_model"  
 PREDICTOR = TabularPredictor.load(PREDICTOR_PATH)     # heavy load happens once
 
 def _to_dataframe(payload) -> pd.DataFrame:
