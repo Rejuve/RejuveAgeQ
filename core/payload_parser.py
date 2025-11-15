@@ -31,20 +31,20 @@ class PayloadParser:
         
         # Extract surveys
         surveys = payload.get('surveys', [])
-        if not isinstance(surveys, list):
-            errors.append("'surveys' must be a list")
+        if not isinstance(surveys, list) or  not surveys:
+            errors.append("'surveys' must be a non-empty list in the payload")
             surveys = []
         
         # Extract biometrics
         biometrics = payload.get('biometrics', {})
-        if not isinstance(biometrics, dict):
-            errors.append("'biometrics' must be an object")
+        if not isinstance(biometrics, dict) or not biometrics:
+            errors.append("'biometrics' must be a non-empty dict in the payload")
             biometrics = {}
         
         # Validate survey structure
         for idx, survey in enumerate(surveys):
             if not isinstance(survey, dict):
-                errors.append(f"Survey item {idx} must be an object")
+                errors.append(f"Survey item {idx} must be a dict")
                 continue
             if 'ques_id' not in survey:
                 errors.append(f"Survey item {idx} missing 'ques_id'")
