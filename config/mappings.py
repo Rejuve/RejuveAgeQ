@@ -156,7 +156,7 @@ QUESTION_ID_MAPPING = {
     14279: 'SMQ860',
     14280: 'SMQ862',
     14281: 'SMQ870',
-    14282: 'SMQ872'
+    14282: 'SMQ872',
     
     # orphan_mapping (not made it to the database, auxiliary for the model)
     99000: 'ALQ110',

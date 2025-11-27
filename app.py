@@ -158,7 +158,7 @@ def predict_endpoint():
         response = {
             "code": status_code,
             "biological_age": None,
-            "message": "message": "Invalid payload" if status_code == 400 else "Prediction failed",
+            "message": "Invalid payload" if status_code == 400 else "Prediction failed",
             "errors": result['errors'],
             "warnings": result['warnings']
         }
