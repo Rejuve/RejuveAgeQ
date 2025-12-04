@@ -4,11 +4,33 @@ Load question configuration from CSV.
 """
 import logging
 import pandas as pd
+import ast
 from pathlib import Path
 from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
+
+def _safe_parse_dict(value: str, field_name: str, code: str) -> dict:
+    """Safely parse a string representation of a dict."""
+    if pd.isna(value) or not value.strip():
+        return {}
+    #Normalize smart quotes → ASCII
+    value = (
+        value.replace("‘", "'")
+             .replace("’", "'")
+             .replace("“", '"')
+             .replace("”", '"')
+    )
+    try:
+        result = ast.literal_eval(value)
+        if not isinstance(result, dict):
+            logger.warning(f"{field_name} for {code} is not a dict: {type(result)}")
+            return {}
+        return result
+    except (ValueError, SyntaxError) as e:
+        logger.warning(f"Failed to parse {field_name} for {code}: {e}")
+        return {}
 
 def load_question_config(csv_path: str = "data/final_questions.csv") -> Dict[str, Dict]:
     """
@@ -31,7 +53,8 @@ def load_question_config(csv_path: str = "data/final_questions.csv") -> Dict[str
         
         # Parse Options (user-facing)
         try:
-            options = eval(row['Options']) if pd.notna(row['Options']) else {}
+            options = _safe_parse_dict(row['Options'], 'Options', nhanes_code)
+
         except Exception as e:
             logger.warning(f"Failed to parse Options for {nhanes_code}: {e}")
             options = {}
@@ -40,7 +63,7 @@ def load_question_config(csv_path: str = "data/final_questions.csv") -> Dict[str
         dependencies = None
         if pd.notna(row.get('Dependencies')):
             try:
-                dependencies = eval(row['Dependencies'])
+                dependencies = _safe_parse_dict(row.get('Dependencies', ''), 'Dependencies', nhanes_code)
             except Exception as e:
                 logger.warning(f"Failed to parse Dependencies for {nhanes_code}: {e}")
         
@@ -58,6 +81,11 @@ def load_question_config(csv_path: str = "data/final_questions.csv") -> Dict[str
 
 # Load configuration at module import
 QUESTION_CONFIG = load_question_config()
+if not QUESTION_CONFIG:
+    raise RuntimeError(
+        "Failed to load question configuration. "
+        "Ensure data/final_questions.csv exists and is valid."
+    )
 
 
 # Create reverse mapping: app_id → question config
