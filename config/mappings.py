@@ -6,7 +6,7 @@ ID mappings for question IDs to NHANES codes.
 BIOMETRICS_MAPPING = {
     'weight': 'BMXWT',
     'height': 'BMXHT',
-    'gender': 'RIAGENDR',
+    'gender': 'SEX',
     'waist_circumference': 'BMXWAIST',
 }
 
