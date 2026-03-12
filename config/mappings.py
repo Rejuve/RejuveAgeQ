@@ -8,6 +8,7 @@ BIOMETRICS_MAPPING = {
     'height': 'BMXHT',
     'gender': 'SEX',
     'waist_circumference': 'BMXWAIST',
+    'age': 'AGE'
 }
 
 QUESTION_ID_MAPPING = {

@@ -3,6 +3,7 @@
 Flask API for AutoGluon NHANES biological age prediction.
 """
 import logging
+import os
 from typing import Dict, Any
 from flask import Flask, request, jsonify
 from autogluon.tabular import TabularPredictor
@@ -10,6 +11,7 @@ from autogluon.tabular import TabularPredictor
 from core.payload_parser import PayloadParser
 from core.feature_builder import FeatureBuilder
 from config.dependencies import DependencyHandler
+from core.post_processor import PredictionPostProcessor
 
 # --- Setup ---
 app = Flask(__name__)
@@ -23,7 +25,12 @@ logger = logging.getLogger(__name__)
 
 # --- Load model at startup ---
 PREDICTOR_PATH = "checkpoint/survey_model"
+OLS_CONFIG_PATH = os.path.join(PREDICTOR_PATH, "bias_params.json")
+
 logger.info(f"Loading AutoGluon predictor from {PREDICTOR_PATH}...")
+
+if not os.path.exists(OLS_CONFIG_PATH):
+    logger.warning(f"OLS Config not found at {OLS_CONFIG_PATH}. Predictions will be uncorrected.")
 
 try:
     PREDICTOR = TabularPredictor.load(PREDICTOR_PATH)
@@ -38,6 +45,7 @@ dependency_handler = DependencyHandler()
 feature_builder = FeatureBuilder(
     model_features=PREDICTOR.features() if PREDICTOR else []
 )
+post_processor = PredictionPostProcessor(config_path=OLS_CONFIG_PATH)
 
 
 def process_payload(payload: Dict) -> Dict[str, Any]:
@@ -82,14 +90,21 @@ def process_payload(payload: Dict) -> Dict[str, Any]:
     # Step 4: Predict
     try:
         predictions = PREDICTOR.predict(df)
-        biological_age = float(predictions.iloc[0])
+        biological_age_raw = float(predictions.iloc[0])
+
+        chronological_age = float(biometrics.get('age'))
+
+
+        correction = post_processor.apply_correction(biological_age_raw, chronological_age)
         
         all_warnings = build_warnings + dep_warnings
         
         return {
             'success': True,
             'data': {
-                'biological_age': biological_age,
+                'biological_age': correction['display_age'],
+                'raw_model_age': biological_age_raw,
+                'age_acceleration': correction['age_acceleration'],
                 'features_used': int(df.notna().sum().sum()),
                 'total_features': len(PREDICTOR.features())
             },
@@ -247,4 +262,4 @@ def list_questions():
 if __name__ == "__main__":
     # For production, use gunicorn:
     # gunicorn app:app -w 4 -b 0.0.0.0:5001 --preload --timeout 120
-    app.run(host="0.0.0.0", port=5001, debug=False)
+    app.run(host="0.0.0.0", port=5002, debug=False)
