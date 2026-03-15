@@ -6,6 +6,7 @@ import logging
 from typing import Dict, Any
 from flask import Flask, request, jsonify
 from autogluon.tabular import TabularPredictor
+import pandas as pd
 
 from core.payload_parser import PayloadParser
 from core.feature_builder import FeatureBuilder
@@ -26,8 +27,18 @@ PREDICTOR_PATH = "checkpoint/survey_model"
 logger.info(f"Loading AutoGluon predictor from {PREDICTOR_PATH}...")
 
 try:
-    PREDICTOR = TabularPredictor.load(PREDICTOR_PATH)
+    PREDICTOR = TabularPredictor.load(PREDICTOR_PATH, require_version_match=False, require_py_version_match=False)
     logger.info(f"✓ Model loaded successfully. Features: {len(PREDICTOR.features())}")
+    
+    # Optional warmup - set WARMUP_MODELS=true in environment to enable
+    import os
+    if os.getenv('WARMUP_MODELS', 'false').lower() == 'true':
+        logger.info("Warming up models (this may take 30-60 seconds)...")
+        dummy_df = pd.DataFrame([{feature: 0.0 for feature in PREDICTOR.features()}])
+        _ = PREDICTOR.predict(dummy_df)
+        logger.info("✓ Models warmed up and ready")
+    else:
+        logger.info("ℹ Skipping model warmup. First prediction will be slower (~30s)")
 except Exception as e:
     logger.error(f"✗ Failed to load model: {e}")
     PREDICTOR = None
@@ -247,4 +258,4 @@ def list_questions():
 if __name__ == "__main__":
     # For production, use gunicorn:
     # gunicorn app:app -w 4 -b 0.0.0.0:5001 --preload --timeout 120
-    app.run(host="0.0.0.0", port=5001, debug=False)
+    app.run(host="0.0.0.0", port=5004, debug=False, threaded=True)
