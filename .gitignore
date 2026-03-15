@@ -1,0 +1,46 @@
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Local / secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# IDE & OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs & cache
+*.log
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Model data (large binaries)
+checkpoint/survey_model/data/
+
+# Optional: uncomment if these are local-only
+# medical_family_history.json
+# question.json
+# survey_question_*.csv
